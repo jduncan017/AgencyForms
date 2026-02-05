@@ -7,6 +7,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().min(1),
     PDF_PASSWORD: z.string().min(1),
     EMAIL_FROM: z.string().email(),
+    UPLOADTHING_TOKEN: z.string().min(1),
   },
 
   client: {},
@@ -16,6 +17,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     PDF_PASSWORD: process.env.PDF_PASSWORD,
     EMAIL_FROM: process.env.EMAIL_FROM,
+    UPLOADTHING_TOKEN: process.env.UPLOADTHING_TOKEN,
   },
 
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,

@@ -21,7 +21,7 @@ function SentContent() {
   }, []);
 
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center bg-gray-950 px-4 py-12">
+    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-2xl animate-fade-in-up space-y-6">
         <Card className="text-center">
           <div className="space-y-4 py-4">
@@ -63,7 +63,7 @@ export default function SentPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gray-950">
+        <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center ">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-700 border-t-brand-500" />
         </main>
       }

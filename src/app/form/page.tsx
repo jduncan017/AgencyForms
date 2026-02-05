@@ -2,17 +2,35 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, Suspense } from "react";
-import { type FieldValue, type SubmissionPayload } from "~/lib/types";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import {
+  type FieldValue,
+  type SubmissionPayload,
+  type InstructionStep,
+  type CredentialGroup,
+  type UploadedFile,
+} from "~/lib/types";
 import { decodeConfig, resolveGroups } from "~/lib/config-codec";
+import { getPresetByPlatform } from "~/lib/presets";
 import {
   getRegistrarById,
   PLATFORM_LOGIN_URLS,
+  PLATFORM_LOGOS,
 } from "~/lib/providers";
 import { IntroSlide } from "~/components/IntroSlide";
+import { InstructionSlide } from "~/components/InstructionSlide";
 import { SlideProgress } from "~/components/SlideProgress";
 import { SlideNavigation } from "~/components/SlideNavigation";
 import { CredentialInput } from "~/components/CredentialInput";
+import { UploadSlide } from "~/components/UploadSlide";
 import { FormWrapper } from "~/components/FormWrapper";
+
+type SlideDesc =
+  | { type: "intro" }
+  | { type: "instruction"; step: InstructionStep; platform: string }
+  | { type: "credential"; groupIndex: number; group: CredentialGroup }
+  | { type: "upload" };
 
 function FormContent() {
   const searchParams = useSearchParams();
@@ -33,13 +51,31 @@ function FormContent() {
     return resolveGroups(config);
   }, [config]);
 
-  const totalSlides = groups.length + 1; // intro + one per group
+  // Build flat slide list: intro → (instruction slides + credential) per group
+  const slides = useMemo<SlideDesc[]>(() => {
+    const result: SlideDesc[] = [{ type: "intro" }];
+    groups.forEach((group, groupIndex) => {
+      const preset = getPresetByPlatform(group.platform);
+      if (preset?.instructions) {
+        for (const step of preset.instructions) {
+          result.push({ type: "instruction", step, platform: group.platform });
+        }
+      }
+      result.push({ type: "credential", groupIndex, group });
+    });
+    if (config?.requestUploads) {
+      result.push({ type: "upload" });
+    }
+    return result;
+  }, [groups, config?.requestUploads]);
+
   const [currentSlide, setCurrentSlide] = useState(0);
 
   // State: one record per group, keyed by field key (field type or registrar_custom)
   const [values, setValues] = useState<Record<string, string>[]>(() =>
     groups.map(() => ({})),
   );
+  const [uploads, setUploads] = useState<UploadedFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -49,6 +85,18 @@ function FormContent() {
         <p className="text-center text-gray-400">
           This form link is invalid or has been corrupted. Please request a new
           link from your contact at DigitalNova Studio.
+        </p>
+      </FormWrapper>
+    );
+  }
+
+  // Check expiry
+  if (config.expiresAt && Date.now() > config.expiresAt) {
+    return (
+      <FormWrapper title="Link Expired">
+        <p className="text-center text-gray-400">
+          This form link has expired. Please request a new link from your
+          contact at DigitalNova Studio.
         </p>
       </FormWrapper>
     );
@@ -64,8 +112,38 @@ function FormContent() {
     );
   };
 
+  // Validation: check if all required fields in a credential slide are filled
+  const isCredentialSlideValid = (
+    groupIndex: number,
+    group: CredentialGroup,
+  ): boolean => {
+    const groupValues = values[groupIndex] ?? {};
+    return group.fields.every((field) => {
+      if (field === "notes") return true;
+      if (field === "registrar") {
+        const registrarVal = groupValues.registrar ?? "";
+        if (!registrarVal) return false;
+        if (registrarVal === "custom") {
+          const customVal = groupValues.registrar_custom ?? "";
+          return customVal.trim().length > 0;
+        }
+        return true;
+      }
+      return (groupValues[field] ?? "").trim().length > 0;
+    });
+  };
+
+  const isCurrentSlideValid = (() => {
+    const slide = slides[currentSlide];
+    if (!slide) return false;
+    if (slide.type === "credential")
+      return isCredentialSlideValid(slide.groupIndex, slide.group);
+    return true; // intro, instruction, upload are always valid
+  })();
+
   const goNext = () => {
-    if (currentSlide < totalSlides - 1) {
+    if (!isCurrentSlideValid) return;
+    if (currentSlide < slides.length - 1) {
       setCurrentSlide((s) => s + 1);
     }
   };
@@ -82,7 +160,9 @@ function FormContent() {
 
     const payload: SubmissionPayload = {
       clientName: config.clientName,
+      businessName: config.businessName,
       returnEmail: config.returnEmail,
+      uploads: uploads.length > 0 ? uploads : undefined,
       credentials: groups.map((group, i) => {
         const groupValues = values[i] ?? {};
 
@@ -160,59 +240,187 @@ function FormContent() {
   };
 
   const handleLastSlideAction = () => {
+    if (!isCurrentSlideValid) return;
     void handleSubmit();
   };
 
+  const currentSlideDesc = slides[currentSlide];
+  const isLastSlide = currentSlide === slides.length - 1;
+  const isIntro = currentSlideDesc?.type === "intro";
+  const totalSteps = slides.length - 1; // exclude intro
+
+  // Get header info for the current slide
+  const platformInfo = (() => {
+    const slide = slides[currentSlide];
+    if (!slide || slide.type === "intro") return null;
+    if (slide.type === "upload") return { platform: "File Uploads", logo: undefined };
+    const platform =
+      slide.type === "instruction" ? slide.platform : slide.group.platform;
+    const logo = PLATFORM_LOGOS[platform];
+    return { platform, logo };
+  })();
+
   return (
-      <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center bg-gray-950 px-4">
-        <div className="relative w-full max-w-2xl overflow-hidden py-8">
-          {/* Slides container */}
+    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 pb-20 lg:pb-8">
+      <div className="w-full max-w-4xl py-8">
+        {/* Platform header — above card, only on non-intro slides */}
+        {!isIntro && platformInfo && (
           <div
-            className="flex transition-transform duration-400 ease-in-out"
-            style={{
-              transform: `translateX(-${currentSlide * 100}%)`,
-            }}
+            key={`header-${currentSlide}`}
+            className="mx-auto mb-4 flex max-w-2xl animate-fade-in-up items-center gap-3"
           >
-            {/* Slide 0: Intro */}
-            <div className="w-full flex-shrink-0 px-1">
-              <IntroSlide
-                clientName={config.clientName}
-                onStart={goNext}
+            {platformInfo.logo ? (
+              <Image
+                src={platformInfo.logo}
+                alt={`${platformInfo.platform} logo`}
+                width={40}
+                height={40}
+                className="rounded-lg"
               />
-            </div>
+            ) : (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold text-gray-300">
+                {platformInfo.platform.charAt(0)}
+              </span>
+            )}
+            <h2 className="text-2xl font-bold text-gray-100">
+              {platformInfo.platform}
+            </h2>
+          </div>
+        )}
 
-            {/* Slides 1..N: Credential groups */}
-            {groups.map((group, i) => {
-              const isLast = i === groups.length - 1;
+        {/* Content area with desktop side navigation */}
+        <div className="relative mx-auto max-w-2xl">
+          {/* Desktop back button — left side of card */}
+          {!isIntro && currentSlide > 0 && (
+            <button
+              type="button"
+              onClick={goBack}
+              className="absolute -left-16 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-gray-800/80 text-gray-400 transition-colors hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200 lg:flex"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
 
-              return (
-                <div key={`${group.platform}-${i}`} className="w-full flex-shrink-0 px-1">
-                  <div className="space-y-2">
-                    <SlideProgress current={i + 1} total={groups.length} />
+          {/* Slides */}
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-400 ease-in-out"
+              style={{
+                transform: `translateX(-${currentSlide * 100}%)`,
+              }}
+            >
+              {slides.map((slide, slideIndex) => (
+                <div
+                  key={slideIndex}
+                  className="w-full flex-shrink-0 px-1"
+                >
+                  {slide.type === "intro" && (
+                    <IntroSlide
+                      clientName={config.clientName}
+                      onStart={goNext}
+                    />
+                  )}
+
+                  {slide.type === "instruction" && (
+                    <InstructionSlide step={slide.step} />
+                  )}
+
+                  {slide.type === "credential" && (
                     <CredentialInput
-                      group={group}
-                      values={values[i] ?? {}}
+                      group={slide.group}
+                      values={values[slide.groupIndex] ?? {}}
                       onChange={(field, value) =>
-                        handleFieldChange(i, field, value)
+                        handleFieldChange(slide.groupIndex, field, value)
                       }
                     />
-                    {error && isLast && (
-                      <p className="text-base text-red-400">{error}</p>
-                    )}
-                    <SlideNavigation
-                      onBack={goBack}
-                      onNext={isLast ? handleLastSlideAction : goNext}
-                      isFirst={false}
-                      isLast={isLast}
-                      isSubmitting={submitting}
+                  )}
+
+                  {slide.type === "upload" && (
+                    <UploadSlide
+                      uploads={uploads}
+                      onChange={setUploads}
                     />
-                  </div>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
+
+          {/* Desktop next button — right side of card */}
+          {!isIntro && !isLastSlide && (
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={!isCurrentSlideValid}
+              className={`absolute left-[calc(100%+1.25rem)] top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:flex ${
+                isCurrentSlideValid
+                  ? "cursor-pointer bg-brand-500 text-white hover:bg-brand-400"
+                  : "cursor-not-allowed border border-gray-700 bg-gray-800/80 text-gray-600"
+              }`}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
+
+          {/* Desktop submit button — right side of card (last slide only) */}
+          {!isIntro && isLastSlide && (
+            <button
+              type="button"
+              onClick={handleLastSlideAction}
+              disabled={submitting || !isCurrentSlideValid}
+              className={`group absolute left-[calc(100%+1.25rem)] top-1/2 z-10 hidden h-11 -translate-y-1/2 items-center rounded-full transition-all duration-300 disabled:opacity-50 lg:flex ${
+                isCurrentSlideValid
+                  ? "cursor-pointer bg-brand-500 text-white hover:bg-brand-400"
+                  : "cursor-not-allowed border border-gray-700 bg-gray-800/80 text-gray-600"
+              }`}
+            >
+              {submitting ? (
+                <div className="flex h-11 w-11 items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                </div>
+              ) : (
+                <>
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+                    <Send className="h-4 w-4" />
+                  </div>
+                  <span className="max-w-0 overflow-hidden whitespace-nowrap pr-0 text-sm font-semibold transition-all duration-300 group-hover:max-w-24 group-hover:pr-4">
+                    Send!
+                  </span>
+                </>
+              )}
+            </button>
+          )}
         </div>
-      </main>
+
+        {/* Error message */}
+        {error && isLastSlide && (
+          <p className="mx-auto mt-3 max-w-2xl text-base text-red-400">
+            {error}
+          </p>
+        )}
+
+        {/* Progress bar */}
+        {!isIntro && (
+          <div className="mx-auto max-w-2xl">
+            <SlideProgress current={currentSlide} total={totalSteps} />
+          </div>
+        )}
+
+        {/* Mobile navigation — below card */}
+        {!isIntro && (
+          <div className="mx-auto max-w-2xl">
+            <SlideNavigation
+              onBack={goBack}
+              onNext={isLastSlide ? handleLastSlideAction : goNext}
+              isFirst={currentSlide <= 0}
+              isLast={isLastSlide}
+              isSubmitting={submitting}
+              nextDisabled={!isCurrentSlideValid}
+            />
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
 
@@ -220,10 +428,10 @@ export default function FormPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center bg-gray-950 px-4">
+        <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
           <div className="w-full max-w-2xl space-y-6 py-8">
             {/* Skeleton card */}
-            <div className="animate-pulse rounded-xl border border-gray-800 bg-gray-900/50 p-6">
+            <div className="animate-pulse rounded-xl border border-gray-800 bg-gray-900/50 p-6 shadow-lg shadow-black/25">
               <div className="mb-6 flex flex-col items-center gap-3">
                 <div className="h-8 w-48 rounded-lg bg-gray-800" />
                 <div className="h-4 w-72 rounded bg-gray-800" />

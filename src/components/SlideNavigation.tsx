@@ -8,6 +8,7 @@ interface SlideNavigationProps {
   isFirst: boolean;
   isLast: boolean;
   isSubmitting?: boolean;
+  nextDisabled?: boolean;
 }
 
 export function SlideNavigation({
@@ -16,9 +17,10 @@ export function SlideNavigation({
   isFirst,
   isLast,
   isSubmitting = false,
+  nextDisabled = false,
 }: SlideNavigationProps) {
   return (
-    <div className="mt-6 flex items-center gap-3">
+    <div className="mt-6 flex items-center gap-3 lg:hidden">
       {!isFirst && (
         <Button type="button" variant="secondary" onClick={onBack}>
           &larr; Back
@@ -29,13 +31,13 @@ export function SlideNavigation({
         <Button
           type="submit"
           isLoading={isSubmitting}
-          disabled={isSubmitting}
+          disabled={isSubmitting || nextDisabled}
           onClick={onNext}
         >
           Submit Credentials
         </Button>
       ) : (
-        <Button type="button" onClick={onNext}>
+        <Button type="button" onClick={onNext} disabled={nextDisabled}>
           Next &rarr;
         </Button>
       )}

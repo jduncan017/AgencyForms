@@ -27,10 +27,18 @@ const credentialGroupSchema = z.object({
   loginUrl: z.string().url().optional(),
 });
 
+const uploadedFileSchema = z.object({
+  name: z.string(),
+  url: z.string().url(),
+  size: z.number(),
+});
+
 const submissionSchema = z.object({
   clientName: z.string().min(1),
+  businessName: z.string().min(1),
   returnEmail: z.string().email(),
   credentials: z.array(credentialGroupSchema).min(1),
+  uploads: z.array(uploadedFileSchema).optional(),
 });
 
 export async function POST(request: Request) {
@@ -39,13 +47,15 @@ export async function POST(request: Request) {
 
     // Generate password-protected PDF
     const pdfBytes = await generateEncryptedPdf(
+      body.businessName,
       body.clientName,
       body.credentials,
       env.PDF_PASSWORD,
+      body.uploads,
     );
 
     // Email PDF to the return address
-    await sendCredentialPdf(body.returnEmail, body.clientName, pdfBytes);
+    await sendCredentialPdf(body.returnEmail, body.businessName, body.clientName, pdfBytes, body.uploads);
 
     return NextResponse.json({ success: true });
   } catch (err) {

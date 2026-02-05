@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { type CredentialGroup } from "~/lib/types";
 import { FIELD_LABELS } from "~/lib/presets";
-import { getRegistrarById, PLATFORM_LOGOS } from "~/lib/providers";
 import { Input } from "./ui/Input";
 import { PasswordInput } from "./ui/PasswordInput";
 import { RegistrarDropdown } from "./RegistrarDropdown";
@@ -20,35 +18,13 @@ export function CredentialInput({
   values,
   onChange,
 }: CredentialInputProps) {
-  // Determine the logo for the card header
-  let headerLogo: string | undefined = PLATFORM_LOGOS[group.platform];
-
-  // For Domain Login, show the selected registrar's logo instead
-  if (group.fields.includes("registrar") && !headerLogo) {
-    const registrarKey = "registrar";
-    const selectedId = values[registrarKey] ?? "";
-    const registrar = getRegistrarById(selectedId);
-    if (registrar?.logo) {
-      headerLogo = registrar.logo;
-    }
-  }
-
   return (
-    <Card>
-      <div className="mb-4 flex items-center gap-3">
-        {headerLogo && (
-          <Image
-            src={headerLogo}
-            alt={`${group.platform} logo`}
-            width={28}
-            height={28}
-            className="rounded"
-          />
-        )}
-        <h3 className="text-xl font-semibold text-gray-100">
-          {group.platform}
-        </h3>
-      </div>
+    <Card className="min-h-[360px] md:p-16 lg:p-20">
+      <p className="mb-4 text-base text-gray-400">
+        Enter your login credentials for{" "}
+        <span className="font-medium text-gray-300">{group.platform}</span>{" "}
+        below.
+      </p>
       <div className="space-y-4">
         {group.fields.map((field) => {
           const label = FIELD_LABELS[field];

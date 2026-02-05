@@ -7,18 +7,24 @@ import { getPresetByCode } from "./presets";
  */
 interface CompactConfig {
   cn: string; // clientName
+  bn: string; // businessName
   re: string; // returnEmail
   p: string[]; // preset codes
   c: { n: string; f: string[] }[]; // custom groups: name + fields
+  ex?: number; // expiry timestamp (seconds since epoch)
+  u?: 1; // request file uploads
 }
 
 /** Encode a FormConfig into a base64url string for use in URLs */
 export function encodeConfig(config: FormConfig): string {
   const compact: CompactConfig = {
     cn: config.clientName,
+    bn: config.businessName,
     re: config.returnEmail,
     p: config.presets,
     c: config.custom.map((g) => ({ n: g.platform, f: g.fields })),
+    ex: config.expiresAt ? Math.floor(config.expiresAt / 1000) : undefined,
+    u: config.requestUploads ? 1 : undefined,
   };
 
   const json = JSON.stringify(compact);
@@ -41,6 +47,7 @@ export function decodeConfig(encoded: string): FormConfig {
 
   return {
     clientName: compact.cn,
+    businessName: compact.bn ?? compact.cn,
     returnEmail: compact.re,
     presets: compact.p,
     custom: compact.c.map(
@@ -49,6 +56,8 @@ export function decodeConfig(encoded: string): FormConfig {
         fields: g.f as CredentialGroup["fields"],
       }),
     ),
+    expiresAt: compact.ex ? compact.ex * 1000 : undefined,
+    requestUploads: compact.u === 1,
   };
 }
 

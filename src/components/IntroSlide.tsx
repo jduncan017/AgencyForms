@@ -10,8 +10,8 @@ interface IntroSlideProps {
 
 export function IntroSlide({ clientName, onStart }: IntroSlideProps) {
   return (
-    <Card className="w-full animate-fade-in-up">
-      <div className="flex flex-col items-center px-4 py-6 text-center">
+    <Card className="min-h-[360px] w-full animate-fade-in-up md:p-16 lg:p-20">
+      <div className="flex flex-col items-center text-center">
         <h1 className="mb-3 text-3xl font-bold text-gray-100">
           Client Onboarding
         </h1>

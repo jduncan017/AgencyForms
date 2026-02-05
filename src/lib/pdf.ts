@@ -1,5 +1,5 @@
 import PDFDocument from "pdfkit";
-import { type CredentialGroupValue } from "./types";
+import { type CredentialGroupValue, type UploadedFile } from "./types";
 import { FIELD_LABELS } from "./presets";
 
 /**
@@ -15,9 +15,11 @@ function streamToBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
 }
 
 export async function generateEncryptedPdf(
+  businessName: string,
   clientName: string,
   credentials: CredentialGroupValue[],
   password: string,
+  uploads?: UploadedFile[],
 ): Promise<Buffer> {
   const doc = new PDFDocument({
     size: "A4",
@@ -55,7 +57,13 @@ export async function generateEncryptedPdf(
     .fontSize(12)
     .font("Helvetica-Bold")
     .fillColor("#333333")
-    .text(`Client: ${clientName}`);
+    .text(`Business: ${businessName}`);
+
+  doc
+    .fontSize(10)
+    .font("Helvetica")
+    .fillColor("#555555")
+    .text(`Contact: ${clientName}`);
 
   doc
     .fontSize(10)
@@ -95,6 +103,27 @@ export async function generateEncryptedPdf(
         .text(`${label}: `, { continued: true })
         .fillColor("#222222")
         .text(field.value || "(not provided)");
+    }
+
+    doc.moveDown(1);
+  }
+
+  // Uploaded files section
+  if (uploads && uploads.length > 0) {
+    doc
+      .fontSize(14)
+      .font("Helvetica-Bold")
+      .fillColor("#333333")
+      .text("Uploaded Files");
+
+    doc.moveDown(0.3);
+
+    for (const file of uploads) {
+      doc
+        .fontSize(10)
+        .font("Helvetica")
+        .fillColor("#2563eb")
+        .text(file.name, { link: file.url, underline: true });
     }
 
     doc.moveDown(1);
