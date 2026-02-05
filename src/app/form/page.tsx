@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState, Suspense } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, ShieldCheck } from "lucide-react";
 import {
   type FieldValue,
   type SubmissionPayload,
@@ -253,7 +253,8 @@ function FormContent() {
   const platformInfo = (() => {
     const slide = slides[currentSlide];
     if (!slide || slide.type === "intro") return null;
-    if (slide.type === "upload") return { platform: "File Uploads", logo: undefined };
+    if (slide.type === "upload")
+      return { platform: "File Uploads", logo: undefined };
     const platform =
       slide.type === "instruction" ? slide.platform : slide.group.platform;
     const logo = PLATFORM_LOGOS[platform];
@@ -261,28 +262,28 @@ function FormContent() {
   })();
 
   return (
-    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 pb-20 lg:pb-8">
+    <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 pb-20">
       <div className="w-full max-w-4xl py-8">
         {/* Platform header — above card, only on non-intro slides */}
         {!isIntro && platformInfo && (
           <div
-            key={`header-${currentSlide}`}
-            className="mx-auto mb-4 flex max-w-2xl animate-fade-in-up items-center gap-3"
+            key={`header-${platformInfo.platform}`}
+            className="animate-fade-in-up mx-auto mb-6 flex max-w-2xl items-center gap-4"
           >
             {platformInfo.logo ? (
               <Image
                 src={platformInfo.logo}
                 alt={`${platformInfo.platform} logo`}
-                width={40}
-                height={40}
-                className="rounded-lg"
+                width={48}
+                height={48}
+                className="rounded-xl"
               />
             ) : (
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-lg font-bold text-gray-300">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-700 text-xl font-bold text-gray-300">
                 {platformInfo.platform.charAt(0)}
               </span>
             )}
-            <h2 className="text-2xl font-bold text-gray-100">
+            <h2 className="text-3xl font-bold text-gray-100">
               {platformInfo.platform}
             </h2>
           </div>
@@ -295,7 +296,7 @@ function FormContent() {
             <button
               type="button"
               onClick={goBack}
-              className="absolute -left-16 top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-gray-800/80 text-gray-400 transition-colors hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200 lg:flex"
+              className="absolute top-1/2 -left-16 z-10 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-gray-800/80 text-gray-400 transition-colors hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200 lg:flex"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
@@ -312,7 +313,7 @@ function FormContent() {
               {slides.map((slide, slideIndex) => (
                 <div
                   key={slideIndex}
-                  className="w-full flex-shrink-0 px-1"
+                  className="flex w-full flex-shrink-0 flex-col justify-center px-1"
                 >
                   {slide.type === "intro" && (
                     <IntroSlide
@@ -336,10 +337,7 @@ function FormContent() {
                   )}
 
                   {slide.type === "upload" && (
-                    <UploadSlide
-                      uploads={uploads}
-                      onChange={setUploads}
-                    />
+                    <UploadSlide uploads={uploads} onChange={setUploads} />
                   )}
                 </div>
               ))}
@@ -352,9 +350,9 @@ function FormContent() {
               type="button"
               onClick={goNext}
               disabled={!isCurrentSlideValid}
-              className={`absolute left-[calc(100%+1.25rem)] top-1/2 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:flex ${
+              className={`absolute top-1/2 left-[calc(100%+1.25rem)] z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:flex ${
                 isCurrentSlideValid
-                  ? "cursor-pointer bg-brand-500 text-white hover:bg-brand-400"
+                  ? "bg-brand-500 hover:bg-brand-400 cursor-pointer text-white"
                   : "cursor-not-allowed border border-gray-700 bg-gray-800/80 text-gray-600"
               }`}
             >
@@ -368,9 +366,9 @@ function FormContent() {
               type="button"
               onClick={handleLastSlideAction}
               disabled={submitting || !isCurrentSlideValid}
-              className={`group absolute left-[calc(100%+1.25rem)] top-1/2 z-10 hidden h-11 -translate-y-1/2 items-center rounded-full transition-all duration-300 disabled:opacity-50 lg:flex ${
+              className={`group absolute top-1/2 left-[calc(100%+1.25rem)] z-10 hidden h-11 -translate-y-1/2 items-center rounded-full transition-all duration-300 disabled:opacity-50 lg:flex ${
                 isCurrentSlideValid
-                  ? "cursor-pointer bg-brand-500 text-white hover:bg-brand-400"
+                  ? "bg-brand-500 hover:bg-brand-400 cursor-pointer text-white"
                   : "cursor-not-allowed border border-gray-700 bg-gray-800/80 text-gray-600"
               }`}
             >
@@ -383,7 +381,7 @@ function FormContent() {
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center">
                     <Send className="h-4 w-4" />
                   </div>
-                  <span className="max-w-0 overflow-hidden whitespace-nowrap pr-0 text-sm font-semibold transition-all duration-300 group-hover:max-w-24 group-hover:pr-4">
+                  <span className="max-w-0 overflow-hidden pr-0 text-sm font-semibold whitespace-nowrap transition-all duration-300 group-hover:max-w-24 group-hover:pr-4">
                     Send!
                   </span>
                 </>
@@ -391,6 +389,47 @@ function FormContent() {
             </button>
           )}
         </div>
+
+        {/* Security disclaimer — below card on intro */}
+        {isIntro && (
+          <div className="mx-auto mt-4 flex max-w-2xl flex-col items-center justify-center text-center">
+            <p className="max-w-sm text-base text-gray-500">
+              All data is encrypted and transmitted securely. Your credentials
+              will be kept in a password-protected file, and never stored
+              online.
+            </p>
+
+            {/* Security info tooltip */}
+            <div className="group text-brand-500/90 hover:text-brand-400 relative mt-4 inline-flex cursor-default items-center gap-1.5 tracking-wide transition-colors">
+              <ShieldCheck className="h-4 w-4" />
+              <span>How is my data handled?</span>
+
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2.5 w-72 -translate-x-1/2 rounded-xl border border-gray-700 bg-gray-900 p-4 text-left opacity-0 shadow-xl shadow-black/30 transition-opacity duration-200 group-hover:pointer-events-auto group-hover:opacity-100">
+                <p className="mb-2 text-lg font-semibold text-gray-200">
+                  Your data is safe
+                </p>
+                <ul className="space-y-1.5 leading-relaxed text-gray-400">
+                  <li>
+                    All data is transmitted over an encrypted HTTPS connection.
+                  </li>
+                  <li>
+                    Your credentials are used to generate a password-protected
+                    PDF that is sent directly to our team.
+                  </li>
+                  <li>
+                    No credentials are ever stored on our servers — once the PDF
+                    is generated, the data is gone.
+                  </li>
+                  <li>
+                    This form link expires automatically after a set period.
+                  </li>
+                </ul>
+                {/* Tooltip arrow */}
+                <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-r border-b border-gray-700 bg-gray-900" />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Error message */}
         {error && isLastSlide && (
@@ -401,9 +440,7 @@ function FormContent() {
 
         {/* Progress bar */}
         {!isIntro && (
-          <div className="mx-auto max-w-2xl">
-            <SlideProgress current={currentSlide} total={totalSteps} />
-          </div>
+          <SlideProgress current={currentSlide} total={totalSteps} />
         )}
 
         {/* Mobile navigation — below card */}

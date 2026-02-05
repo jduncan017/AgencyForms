@@ -3,7 +3,7 @@
 import { type ButtonHTMLAttributes } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "outline" | "ghost";
   isLoading?: boolean;
 }
 
@@ -19,10 +19,11 @@ export function Button({
     "inline-flex cursor-pointer items-center justify-center rounded-lg px-5 py-2.5 text-base font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variants = {
-    primary:
-      "bg-brand-500 text-white hover:bg-brand-400 focus:ring-brand-500",
+    primary: "bg-brand-500 text-white hover:bg-brand-400 focus:ring-brand-500",
     secondary:
       "bg-gray-700 text-gray-200 hover:bg-gray-600 focus:ring-gray-500",
+    outline:
+      "border border-brand-300/60 text-brand-300 bg-brand-600/5 hover:bg-brand-500 hover:text-white focus:ring-brand-500",
     ghost:
       "bg-transparent text-gray-400 hover:text-gray-200 hover:bg-gray-800 focus:ring-gray-500",
   };
@@ -36,7 +37,7 @@ export function Button({
       {isLoading ? (
         <>
           <svg
-            className="-ml-1 mr-2 h-4 w-4 animate-spin"
+            className="mr-2 -ml-1 h-4 w-4 animate-spin"
             fill="none"
             viewBox="0 0 24 24"
           >
