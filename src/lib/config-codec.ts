@@ -10,7 +10,7 @@ interface CompactConfig {
   bn: string; // businessName
   re: string; // returnEmail
   p: string[]; // preset codes
-  c: { n: string; f: string[] }[]; // custom groups: name + fields
+  c: { n: string; f: string[]; s?: string }[]; // custom groups: name + fields + optional signup URL
   ex?: number; // expiry timestamp (seconds since epoch)
   u?: 1; // request file uploads
 }
@@ -22,7 +22,11 @@ export function encodeConfig(config: FormConfig): string {
     bn: config.businessName,
     re: config.returnEmail,
     p: config.presets,
-    c: config.custom.map((g) => ({ n: g.platform, f: g.fields })),
+    c: config.custom.map((g) => ({
+      n: g.platform,
+      f: g.fields,
+      s: g.signupUrl ?? undefined,
+    })),
     ex: config.expiresAt ? Math.floor(config.expiresAt / 1000) : undefined,
     u: config.requestUploads ? 1 : undefined,
   };
@@ -54,6 +58,7 @@ export function decodeConfig(encoded: string): FormConfig {
       (g): CredentialGroup => ({
         platform: g.n,
         fields: g.f as CredentialGroup["fields"],
+        signupUrl: g.s ?? undefined,
       }),
     ),
     expiresAt: compact.ex ? compact.ex * 1000 : undefined,

@@ -24,13 +24,15 @@ import { SlideProgress } from "~/components/SlideProgress";
 import { SlideNavigation } from "~/components/SlideNavigation";
 import { CredentialInput } from "~/components/CredentialInput";
 import { UploadSlide } from "~/components/UploadSlide";
+import { ClientCopySlide } from "~/components/ClientCopySlide";
 import { FormWrapper } from "~/components/FormWrapper";
 
 type SlideDesc =
   | { type: "intro" }
   | { type: "instruction"; step: InstructionStep; platform: string }
   | { type: "credential"; groupIndex: number; group: CredentialGroup }
-  | { type: "upload" };
+  | { type: "upload" }
+  | { type: "clientCopy" };
 
 function FormContent() {
   const searchParams = useSearchParams();
@@ -60,12 +62,24 @@ function FormContent() {
         for (const step of preset.instructions) {
           result.push({ type: "instruction", step, platform: group.platform });
         }
+      } else if (group.signupUrl) {
+        result.push({
+          type: "instruction",
+          step: {
+            title: `Sign Up for ${group.platform}`,
+            body: `Use the link below to create your ${group.platform} account.`,
+            linkUrl: group.signupUrl,
+            linkLabel: `Sign Up for ${group.platform}`,
+          },
+          platform: group.platform,
+        });
       }
       result.push({ type: "credential", groupIndex, group });
     });
     if (config?.requestUploads) {
       result.push({ type: "upload" });
     }
+    result.push({ type: "clientCopy" });
     return result;
   }, [groups, config?.requestUploads]);
 
@@ -76,6 +90,11 @@ function FormContent() {
     groups.map(() => ({})),
   );
   const [uploads, setUploads] = useState<UploadedFile[]>([]);
+  const [clientCopyEnabled, setClientCopyEnabled] = useState(false);
+  const [clientCopyEmail, setClientCopyEmail] = useState("");
+  const [clientCopyPassword, setClientCopyPassword] = useState("");
+  const [clientCopyConfirmPassword, setClientCopyConfirmPassword] =
+    useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -138,6 +157,14 @@ function FormContent() {
     if (!slide) return false;
     if (slide.type === "credential")
       return isCredentialSlideValid(slide.groupIndex, slide.group);
+    if (slide.type === "clientCopy") {
+      if (!clientCopyEnabled) return true;
+      return (
+        clientCopyEmail.trim().length > 0 &&
+        clientCopyPassword.length > 0 &&
+        clientCopyPassword === clientCopyConfirmPassword
+      );
+    }
     return true; // intro, instruction, upload are always valid
   })();
 
@@ -163,6 +190,9 @@ function FormContent() {
       businessName: config.businessName,
       returnEmail: config.returnEmail,
       uploads: uploads.length > 0 ? uploads : undefined,
+      clientCopy: clientCopyEnabled
+        ? { email: clientCopyEmail, password: clientCopyPassword }
+        : undefined,
       credentials: groups.map((group, i) => {
         const groupValues = values[i] ?? {};
 
@@ -247,6 +277,7 @@ function FormContent() {
   const currentSlideDesc = slides[currentSlide];
   const isLastSlide = currentSlide === slides.length - 1;
   const isIntro = currentSlideDesc?.type === "intro";
+  const isInstruction = currentSlideDesc?.type === "instruction";
   const totalSteps = slides.length - 1; // exclude intro
 
   // Get header info for the current slide
@@ -255,6 +286,8 @@ function FormContent() {
     if (!slide || slide.type === "intro") return null;
     if (slide.type === "upload")
       return { platform: "File Uploads", logo: undefined };
+    if (slide.type === "clientCopy")
+      return { platform: "Your Copy", logo: undefined };
     const platform =
       slide.type === "instruction" ? slide.platform : slide.group.platform;
     const logo = PLATFORM_LOGOS[platform];
@@ -296,9 +329,10 @@ function FormContent() {
             <button
               type="button"
               onClick={goBack}
-              className="absolute top-1/2 -left-16 z-10 hidden h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border border-gray-700 bg-gray-800/80 text-gray-400 transition-colors hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200 lg:flex"
+              className="absolute top-1/2 right-[calc(100%+1.25rem)] z-10 hidden h-11 -translate-y-1/2 cursor-pointer items-center gap-1 rounded-full border border-gray-700 bg-gray-800/80 pl-3 pr-4 text-gray-400 transition-colors hover:border-gray-600 hover:bg-gray-700 hover:text-gray-200 lg:flex"
             >
               <ChevronLeft className="h-5 w-5" />
+              <span className="text-sm font-medium">Back</span>
             </button>
           )}
 
@@ -323,7 +357,7 @@ function FormContent() {
                   )}
 
                   {slide.type === "instruction" && (
-                    <InstructionSlide step={slide.step} />
+                    <InstructionSlide step={slide.step} onNext={goNext} />
                   )}
 
                   {slide.type === "credential" && (
@@ -339,13 +373,26 @@ function FormContent() {
                   {slide.type === "upload" && (
                     <UploadSlide uploads={uploads} onChange={setUploads} />
                   )}
+
+                  {slide.type === "clientCopy" && (
+                    <ClientCopySlide
+                      enabled={clientCopyEnabled}
+                      onEnabledChange={setClientCopyEnabled}
+                      email={clientCopyEmail}
+                      onEmailChange={setClientCopyEmail}
+                      password={clientCopyPassword}
+                      onPasswordChange={setClientCopyPassword}
+                      confirmPassword={clientCopyConfirmPassword}
+                      onConfirmPasswordChange={setClientCopyConfirmPassword}
+                    />
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Desktop next button — right side of card */}
-          {!isIntro && !isLastSlide && (
+          {/* Desktop next button — right side of card (hidden on instruction slides) */}
+          {!isIntro && !isLastSlide && !isInstruction && (
             <button
               type="button"
               onClick={goNext}

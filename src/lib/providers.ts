@@ -39,6 +39,7 @@ export const DOMAIN_REGISTRARS: ServiceProvider[] = [
 export const PLATFORM_LOGIN_URLS: Record<string, string> = {
   Pipedrive: "https://app.pipedrive.com/auth/login",
   "cal.com": "https://app.cal.com/auth/login",
+  Resend: "https://resend.com/login",
 };
 
 /** Maps platform names to logo image paths in /public/logos/ */
@@ -47,6 +48,7 @@ export const PLATFORM_LOGOS: Record<string, string> = {
   Pipedrive: "/logos/pipedrive.webp",
   Cloudflare: "/logos/cloudflare.webp",
   Squarespace: "/logos/squarespace.webp",
+  Resend: "/logos/resend.webp",
 };
 
 export function getRegistrarById(id: string): ServiceProvider | undefined {

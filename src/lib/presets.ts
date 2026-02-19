@@ -51,6 +51,21 @@ export const PRESETS: PresetDefinition[] = [
       },
     ],
   },
+  {
+    code: "re",
+    group: {
+      platform: "Resend",
+      fields: ["email", "password"],
+    },
+    instructions: [
+      {
+        title: "Create Your Resend Account",
+        body: "Use the link below to create your Resend account.\n\n**Important:** Sign up using your **email address** — do **NOT** use GitHub or Google sign-in, as this will make it harder for us to access your account for setup.",
+        linkUrl: "https://resend.com/signup",
+        linkLabel: "Sign Up for Resend",
+      },
+    ],
+  },
 ];
 
 /** Look up a preset by its shorthand code */

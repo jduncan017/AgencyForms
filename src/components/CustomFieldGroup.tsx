@@ -64,6 +64,18 @@ export function CustomFieldGroup({
                 <Trash2 className="h-4 w-4" />
               </button>
             </div>
+            <input
+              value={group.signupUrl ?? ""}
+              onChange={(e) =>
+                onChange(i, {
+                  ...group,
+                  signupUrl: e.target.value || undefined,
+                })
+              }
+              type="url"
+              placeholder="Signup URL (optional)"
+              className="mt-2 w-full rounded-lg border border-gray-700 bg-gray-800 px-3.5 py-2.5 text-base text-gray-100 placeholder-gray-500 transition-colors focus:border-brand-500 focus:outline-none focus:shadow-[0_0_0_3px_rgba(0,167,211,0.15)]"
+            />
           </div>
         ))}
       </div>

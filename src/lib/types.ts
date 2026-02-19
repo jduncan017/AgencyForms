@@ -18,6 +18,8 @@ export interface CredentialGroup {
   platform: string;
   /** Which fields to collect */
   fields: FieldType[];
+  /** Optional signup URL shown as an instruction slide before credential entry */
+  signupUrl?: string;
 }
 
 /**
@@ -69,4 +71,5 @@ export interface SubmissionPayload {
   returnEmail: string;
   credentials: CredentialGroupValue[];
   uploads?: UploadedFile[];
+  clientCopy?: { email: string; password: string };
 }

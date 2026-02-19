@@ -3,7 +3,7 @@ import { z } from "zod";
 import { env } from "~/env";
 import { type FieldType } from "~/lib/types";
 import { generateEncryptedPdf } from "~/lib/pdf";
-import { sendCredentialPdf } from "~/lib/email";
+import { sendCredentialPdf, sendClientCopyPdf } from "~/lib/email";
 
 const FIELD_TYPES: FieldType[] = [
   "url",
@@ -39,6 +39,9 @@ const submissionSchema = z.object({
   returnEmail: z.string().email(),
   credentials: z.array(credentialGroupSchema).min(1),
   uploads: z.array(uploadedFileSchema).optional(),
+  clientCopy: z
+    .object({ email: z.string().email(), password: z.string().min(1) })
+    .optional(),
 });
 
 export async function POST(request: Request) {
@@ -56,6 +59,23 @@ export async function POST(request: Request) {
 
     // Email PDF to the return address
     await sendCredentialPdf(body.returnEmail, body.businessName, body.clientName, pdfBytes, body.uploads);
+
+    // Send client their own copy if requested
+    if (body.clientCopy) {
+      const clientPdfBytes = await generateEncryptedPdf(
+        body.businessName,
+        body.clientName,
+        body.credentials,
+        body.clientCopy.password,
+        body.uploads,
+      );
+      await sendClientCopyPdf(
+        body.clientCopy.email,
+        body.businessName,
+        body.clientName,
+        clientPdfBytes,
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
