@@ -93,7 +93,7 @@ export function UploadSlide({ uploads, onChange }: UploadSlideProps) {
   };
 
   return (
-    <Card className="min-h-[360px] md:p-16 lg:p-20">
+    <Card className="min-h-[400px] md:p-16 lg:p-20">
       <p className="mb-4 text-base text-gray-400">
         Upload any images you&apos;d like to share — logos, brand assets,
         screenshots, etc.

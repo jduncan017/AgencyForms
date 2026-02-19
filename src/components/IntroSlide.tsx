@@ -11,7 +11,7 @@ interface IntroSlideProps {
 
 export function IntroSlide({ clientName, onStart }: IntroSlideProps) {
   return (
-    <Card className="animate-fade-in-up flex min-h-[360px] w-full flex-col items-center md:p-16 lg:p-20">
+    <Card className="animate-fade-in-up flex min-h-[400px] w-full flex-col items-center md:p-16 lg:p-20">
       <Image
         src="/agencyforms.png"
         alt="AgencyForms"

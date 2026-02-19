@@ -30,52 +30,63 @@ export function ClientCopySlide({
   const showMismatch = enabled && confirmPassword.length > 0 && !passwordsMatch;
 
   return (
-    <Card>
-      <h3 className="mb-1 text-center text-xl font-semibold text-gray-100">
-        Keep a Copy
-      </h3>
-      <p className="mb-6 text-center text-sm text-gray-400">
-        Optionally receive a password-protected copy of your credentials.
-      </p>
+    <Card className="min-h-[400px] md:p-16 lg:p-20">
+      <div className="space-y-5">
+        <h3 className="text-xl font-semibold text-gray-100">
+          Would you like a copy?
+        </h3>
 
-      <Checkbox
-        label="Send me a password-protected copy"
-        checked={enabled}
-        onChange={(e) => onEnabledChange(e.target.checked)}
-      />
+        <p className="text-base leading-relaxed text-gray-400">
+          We&apos;ll send you a password-protected PDF of your login credentials
+          for your records. Remember your password — you&apos;ll need it to open
+          the file.
+        </p>
 
-      {enabled && (
-        <div className="mt-5 space-y-4">
-          <Input
-            label="Your Email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => onEmailChange(e.target.value)}
-          />
+        <Checkbox
+          label="Yes, send me a copy"
+          checked={enabled}
+          onChange={(e) => onEnabledChange(e.target.checked)}
+        />
 
-          <PasswordInput
-            label="Choose a PDF Password"
-            placeholder="Enter a password"
-            value={password}
-            onChange={(e) => onPasswordChange(e.target.value)}
-          />
-
-          <div>
-            <PasswordInput
-              label="Confirm Password"
-              placeholder="Re-enter password"
-              value={confirmPassword}
-              onChange={(e) => onConfirmPasswordChange(e.target.value)}
+        {enabled && (
+          <div className="space-y-4 pt-1">
+            <Input
+              label="Your Email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => onEmailChange(e.target.value)}
             />
-            {showMismatch && (
-              <p className="mt-1.5 text-sm text-red-400">
-                Passwords do not match.
+
+            <div>
+              <PasswordInput
+                label="Choose a PDF Password"
+                placeholder="Enter a password"
+                value={password}
+                onChange={(e) => onPasswordChange(e.target.value)}
+              />
+              <p className="mt-1.5 text-sm text-gray-500">
+                You&apos;ll use this to access the PDF with your login
+                credentials.
               </p>
-            )}
+            </div>
+
+            <div>
+              <PasswordInput
+                label="Confirm Password"
+                placeholder="Re-enter password"
+                value={confirmPassword}
+                onChange={(e) => onConfirmPasswordChange(e.target.value)}
+              />
+              {showMismatch && (
+                <p className="mt-1.5 text-sm text-red-400">
+                  Passwords do not match.
+                </p>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </Card>
   );
 }

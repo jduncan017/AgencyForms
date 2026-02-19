@@ -303,7 +303,7 @@ function FormContent() {
             key={`header-${platformInfo.platform}`}
             className="animate-fade-in-up mx-auto mb-6 flex max-w-2xl items-center gap-4"
           >
-            {platformInfo.logo ? (
+            {platformInfo.logo && (
               <Image
                 src={platformInfo.logo}
                 alt={`${platformInfo.platform} logo`}
@@ -311,10 +311,6 @@ function FormContent() {
                 height={48}
                 className="rounded-xl"
               />
-            ) : (
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gray-700 text-xl font-bold text-gray-300">
-                {platformInfo.platform.charAt(0)}
-              </span>
             )}
             <h2 className="text-3xl font-bold text-gray-100">
               {platformInfo.platform}

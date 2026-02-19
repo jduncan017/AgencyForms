@@ -19,7 +19,7 @@ export function CredentialInput({
   onChange,
 }: CredentialInputProps) {
   return (
-    <Card className="min-h-[360px] md:p-16 lg:p-20">
+    <Card className="min-h-[400px] md:p-16 lg:p-20">
       <p className="mb-4 text-base text-gray-400">
         Enter your login credentials for{" "}
         <span className="font-medium text-gray-300">{group.platform}</span>{" "}

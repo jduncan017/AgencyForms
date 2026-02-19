@@ -26,7 +26,7 @@ function renderBody(text: string) {
 
 export function InstructionSlide({ step, onNext }: InstructionSlideProps) {
   return (
-    <Card className="min-h-[360px] md:p-16 lg:p-20">
+    <Card className="min-h-[400px] md:p-16 lg:p-20">
       <div className="space-y-5">
         <h3 className="text-xl font-semibold text-gray-100">{step.title}</h3>
 
